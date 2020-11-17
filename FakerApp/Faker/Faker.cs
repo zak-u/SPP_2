@@ -8,46 +8,14 @@ namespace Faker
 {
     public class Faker : IFaker
     {
+        public Generator gen;
         private Stack<Type> types = new Stack<Type>();
-        private readonly string pathToPlugins = "/Users/admin/Projects/FakerApp/Plugins";
-
-        public Faker()
+        
+        public Faker(Generator Gen)
         {
-            FillGenerator();
+            gen = Gen;
         }
 
-        public void FillGenerator()
-        {
-            Generator.generators.Add(new IntGen());
-            Generator.generators.Add(new LongGen());
-            Generator.generators.Add(new DoubleGen());
-            Generator.generators.Add(new FloatGen());
-            Generator.generators.Add(new ListGen());
-            Generator.generators.Add(new BoolGen());
-           
-
-            // Добавляем генераторы из плагинов
-            DirectoryInfo pluginDirectory = new DirectoryInfo(pathToPlugins);
-
-
-            var pluginFiles = Directory.GetFiles(pathToPlugins, "*.dll");
-            foreach (var file in pluginFiles)
-            {
-                Assembly assembly = Assembly.LoadFrom(file);
-
-                var types = assembly.GetTypes().
-                    Where(t => t.GetInterfaces().Where(i => i.FullName == typeof(IGenerator).FullName).Any());
-
-                foreach (var type in types)
-                {
-                    var plugin = (IGenerator)assembly.CreateInstance(type.FullName);
-                    Generator.generators.Add(plugin); 
-                }
-            }
-            Console.WriteLine(Generator.generators.Count);
-            
-        }
-       
         public T Create<T>()
         {
             return (T)Create(typeof(T));
@@ -57,18 +25,17 @@ namespace Faker
         {
             types.Push(t);
             var rand = new Random();
-            GeneratorContext context;
-
-            context = new GeneratorContext(rand, t);
-            if (Generator.Generate(context) != null)
+            GeneratorContext context = new GeneratorContext(rand, t, gen);
+            
+            if (gen.CanGenerate(t) == true)
             {
                 types.Pop();
-                return Generator.Generate(context);
+                return gen.Generate(context);
             }
 
-            var properties = t.GetProperties();
+            var properties = t.GetProperties();//свойства
             var constructors = t.GetConstructors();
-            var fields = t.GetFields();
+            var fields = t.GetFields();//поля
             constructors = constructors.OrderByDescending(x => x.GetParameters().Count()).ToArray();
             var paramList = new List<object>();
             object obj = new object();
@@ -79,8 +46,8 @@ namespace Faker
                 {
                     foreach (var param in constructor.GetParameters())
                     {
-                        context = new GeneratorContext(rand, param.ParameterType);
-                        if (Generator.Generate(context) == null)
+                        context = new GeneratorContext(rand, param.ParameterType, gen);
+                        if (gen.CanGenerate(param.ParameterType) == false)
                         {
                             if (types.Contains(param.ParameterType))
                             {
@@ -89,7 +56,7 @@ namespace Faker
                             paramList.Add(Create(param.ParameterType));
                             continue;
                         }
-                        paramList.Add(Generator.Generate(context));
+                        paramList.Add(gen.Generate(context));
                     }
                     try
                     {
@@ -102,7 +69,7 @@ namespace Faker
                     }
                 }
             }
-            else
+            else//Эта проверка ветка нужна, т.к. у структур(в частности C) нет конструкторов по умолчанию, и нам нужно создать объект, чтобы заполнить в нем поля
             {
                 try
                 {
@@ -117,66 +84,51 @@ namespace Faker
 
             foreach (var property in properties)
             {
-                context = new GeneratorContext(rand, property.PropertyType);
-                if (Generator.Generate(context) == null)
+                context = new GeneratorContext(rand, property.PropertyType, gen);
+                if (gen.CanGenerate(property.PropertyType) == false)
                 {
                     if (types.Contains(property.PropertyType))
                     {
                         continue;
                     }
-
-                    try
+                    //Эта проверка нужна, если возникнет исключение (класс С, поле Dictionary)
+                     try
                     {
-                        property.SetValue(obj, Create(property.PropertyType));
+                      property.SetValue(obj, Create(property.PropertyType));
                     }
-                    catch
+                   catch
                     {
-                        
                         types.Pop();
                         return null;
                     }
                     continue;
                 }
-
-                try
-                {
-                    property.SetValue(obj, Generator.Generate(context));
-                }
-                catch
-                {
-                    types.Pop();
-                    return null;
-                }
+                property.SetValue(obj, gen.Generate(context));
+               
             }
             foreach (var field in fields)
             {
-                context = new GeneratorContext(rand, field.FieldType);
-                if (Generator.Generate(context) == null)
+                context = new GeneratorContext(rand, field.FieldType, gen);
+                
+                if (gen.CanGenerate(field.FieldType) == false)
                 {
                     if (types.Contains(field.FieldType))
                     {
                         continue;
                     }
-                    try
+                   try
                     {
                         field.SetValue(obj, Create(field.FieldType));
                     }
-                    catch
+                   catch
                     {
                         types.Pop();
                         return null;
                     }
                     continue;
                 }
-                try
-                {
-                    field.SetValue(obj, Generator.Generate(context));
-                }
-                catch
-                {
-                    types.Pop();
-                    return null;
-                }
+                field.SetValue(obj, gen.Generate(context));
+                
             }
             types.Pop();
             return obj;

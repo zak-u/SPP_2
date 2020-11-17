@@ -7,10 +7,13 @@ namespace FakerLib
 
         public Type TargetType { get; }
 
-        public GeneratorContext(Random random, Type targetType)
+        public Generator gen { get; }
+
+        public GeneratorContext(Random random, Type targetType, Generator Gen)
         {
             Random = random;
             TargetType = targetType;
+            gen = Gen;
         }
     }
 }

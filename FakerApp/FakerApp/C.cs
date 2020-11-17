@@ -7,8 +7,6 @@ namespace FakerApp
     {
         public List<List<List<int>>> ListValue;
         public Dictionary<int, int> DictionaryValue;
-       
         
-
     }
 }

@@ -47,6 +47,10 @@
       <Project>{70DC8992-CFF2-4A74-B8B6-533213184108}</Project>
       <Name>Faker</Name>
     </ProjectReference>
+    <ProjectReference Include="..\FakerLib\FakerLib.csproj">
+      <Project>{11971E6A-32A6-4696-A72D-C00CF6019FE0}</Project>
+      <Name>FakerLib</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace FakerLib
@@ -12,19 +13,18 @@ namespace FakerLib
 
         public object Generate(GeneratorContext context)
         {
-            var result = Activator.CreateInstance(context.TargetType);
+            var result = (IList)Activator.CreateInstance(context.TargetType);
             int size = context.Random.Next(1, 6);
-            Type currentType = context.TargetType.GetGenericArguments()[0];
-
-            foreach (var gen in Generator.generators)
+            Type elementsType = context.TargetType.GetGenericArguments()[0];
+            
+            foreach (var generator in context.gen.GetGeneratorsList())
             {
-                if (gen.CanGenerate(currentType))
+                if (generator.CanGenerate(elementsType))
                 {
-                    var method = context.TargetType.GetMethod("Add");
-                    context = new GeneratorContext(context.Random, context.TargetType.GetGenericArguments()[0]);
+                    context = new GeneratorContext(context.Random, elementsType, context.gen);
                     for (var i = 0; i < size; i++)
                     {
-                        method.Invoke(result, new object[] { gen.Generate(context) });
+                        result.Add( generator.Generate(context) );
                     }
                     break;
                 }

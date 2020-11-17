@@ -7,7 +7,7 @@ namespace FakerApp
     {
         public int integerValue;
         public DateTime DateTimeValue;
-        
+        public B du;
         public List<string> ListValue;
         public C CValue;
         public B()

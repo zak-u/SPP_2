@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿using FakerLib;
+using NUnit.Framework;
 
 using System;
 namespace FakerTest
@@ -6,7 +7,21 @@ namespace FakerTest
     [TestFixture()]
     public class Test
     {
-        private Faker.Faker faker = new Faker.Faker();
+        public static Faker.Faker Setup()
+        {
+            Generator gen = new Generator();
+            gen.AddGenerator(new IntGen());
+            gen.AddGenerator(new LongGen());
+            gen.AddGenerator(new DoubleGen());
+            gen.AddGenerator(new FloatGen());
+            gen.AddGenerator(new ListGen());
+            gen.AddGenerator(new BoolGen());
+            gen.LoadGenerators("/Users/admin/Projects/SPP_2/FakerApp/Plugins");
+            Faker.Faker faker = new Faker.Faker(gen);
+            return faker;
+        }
+        
+         Faker.Faker faker = Setup();
         
         public class A
         {
